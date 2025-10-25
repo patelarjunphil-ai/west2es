@@ -161,12 +161,11 @@ try {
     </colgroup>
     <thead>
         <tr>
-            <th class="text-center">#</th> <!-- Number -->
-            <th>Name</th>
-            <!-- <th>Latest Version</th> -->
-            <th class="text-center">Date & Time</th>
-            <th class="text-center">Uploader</th>
-            <th class="text-center">Action</th>
+            <th class="text-center" data-priority="1">#</th> <!-- Number -->
+            <th data-priority="2">Name</th> <!-- Filename -->
+            <th class="text-center" data-priority="3">Date & Time</th>
+            <th class="text-center" data-priority="4">Uploader</th>
+            <th class="text-center" data-priority="5">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -555,11 +554,7 @@ try {
 
 
     <script>
-    // $(document).ready(function () {
-    //     $('.filesTable').DataTable();
-
     $(document).ready(function () {
-    // Check if the DataTable is already initialized
         $('#filesTable').DataTable({
             responsive: {
                 details: {
@@ -569,7 +564,9 @@ try {
                             return 'Details for ' + data[1]; // Filename column
                         }
                     }),
-                    renderer: $.fn.dataTable.Responsive.renderer.tableAll()
+                    renderer: $.fn.dataTable.Responsive.renderer.tableAll({
+                        tableClass: 'table table-sm table-bordered'
+                    })
                 },
                 breakpoints: [
                     { name: 'desktop', width: Infinity },
@@ -581,27 +578,32 @@ try {
                 {
                     targets: 0, // Number column
                     responsivePriority: 1,
-                    className: 'text-center'
+                    className: 'text-center',
+                    width: '5%'
                 },
                 {
                     targets: 1, // Filename column
-                    responsivePriority: 2
+                    responsivePriority: 2,
+                    width: '25%'
                 },
                 {
                     targets: 2, // Date & Time column
                     responsivePriority: 3,
-                    className: 'text-center'
+                    className: 'text-center',
+                    width: '20%'
                 },
                 {
                     targets: 3, // Uploader column
                     responsivePriority: 4,
-                    className: 'text-center'
+                    className: 'text-center',
+                    width: '15%'
                 },
                 {
                     targets: 4, // Actions column
-                    responsivePriority: 5,
+                    responsivePriority: 1, // High priority to always show
                     className: 'text-center',
-                    orderable: false
+                    orderable: false,
+                    width: '35%'
                 }
             ],
             language: {
@@ -622,7 +624,14 @@ try {
             order: [[2, 'desc']], // Sort by date descending
             autoWidth: false,
             scrollX: true,
-            scrollCollapse: true
+            scrollCollapse: true,
+            // Mobile-specific settings
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                 '<"row"<"col-sm-12"tr>>' +
+                 '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            // Ensure proper mobile handling
+            deferRender: true,
+            processing: true
         });
     });
 
@@ -695,6 +704,134 @@ try {
                     alert('Error fetching revisions: ' + response.message);
                 }
             }, 'json');
+        });
+        
+        // Enhanced mobile action buttons with SweetAlert
+        $(document).on('click', '.delete-file', function(e) {
+            e.preventDefault();
+            const fileId = $(this).data('id');
+            const fileName = $(this).data('name');
+            const fileTable1 = $(this).data('table1');
+            const fileTable2 = $(this).data('table2');
+            const fileVersion = $(this).data('version');
+            
+            Swal.fire({
+                title: 'Delete File?',
+                html: `Are you sure you want to delete <strong>${fileName}</strong>?<br><br>This will delete the file and all its revisions. This action cannot be undone.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Deleting...',
+                        text: 'Please wait while we delete the file.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Send AJAX request to delete the file
+                    $.ajax({
+                        url: '../functions/file_functions/delete_file.php',
+                        method: 'POST',
+                        data: { 
+                            file_id: fileId, 
+                            file_table1: fileTable1, 
+                            file_table2: fileTable2, 
+                            file_version: fileVersion 
+                        },
+                        success: function (response) {
+                            if (response.status === 'success') {
+                                Swal.fire({
+                                    title: 'Deleted!',
+                                    text: response.message,
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire('Error!', response.message, 'error');
+                            }
+                        },
+                        error: function () {
+                            Swal.fire('Error!', 'An unexpected error occurred while deleting the file.', 'error');
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Enhanced preview with SweetAlert for mobile
+        $(document).on('click', '.preview-file', function(e) {
+            const fileId = $(this).data('id');
+            const fileName = $(this).data('name');
+            const fileTable = $(this).data('table');
+            
+            // Show loading state
+            Swal.fire({
+                title: 'Loading...',
+                text: 'Fetching file revisions...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Fetch revisions via AJAX
+            $.get('../functions/file_functions/fetch_revisions.php', { 
+                file_id: fileId, 
+                file_table: fileTable 
+            }, function (response) {
+                Swal.close();
+                
+                if (response.status === 'success') {
+                    // Show the modal
+                    $('#previewFileModal').modal('show');
+                    
+                    let revisions = '';
+                    response.data.forEach(revision => {
+                        const fileExtension = revision.filename.split('.').pop().toLowerCase();
+                        let viewerButton = '';
+                        
+                        if (fileExtension === 'pdf') {
+                            viewerButton = `<a href="../view_pdf.php?file_path=${revision.file_path}" class="btn btn-secondary btn-sm" target="_blank" title="Preview PDF file"><i class="fas fa-eye"></i></a>`;
+                        } else if (fileExtension === 'doc' || fileExtension === 'docx') {
+                            viewerButton = `<a href="../view_word.php?file_path=${revision.file_path}" class="btn btn-secondary btn-sm" target="_blank" title="Preview Word document"><i class="fas fa-eye"></i></a>`;
+                        } else if (fileExtension === 'xls' || fileExtension === 'xlsx') {
+                            viewerButton = `<a href="../view_excel.php?file_path=${revision.file_path}" class="btn btn-secondary btn-sm" target="_blank" title="Preview Excel file"><i class="fas fa-eye"></i></a>`;
+                        } else {
+                            viewerButton = `<button class="btn btn-danger btn-sm" disabled title="Unsupported: ${revision.filename}"><i class="fas fa-eye-slash"></i> Unsupported</button>`;
+                        }
+
+                        revisions += `
+                            <tr>
+                                <td>Version ${revision.version_no}</td>
+                                <td>${revision.filename}</td>
+                                <td>${formatDateTime(revision.datetime)}</td>
+                                <td>${revision.file_size}</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-primary download-file2" data-url="${revision.file_path}" title="Download this revision"><i class="fas fa-download"></i></a>
+                                    ${viewerButton}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    $('#revisionTableBody').html(revisions);
+                } else {
+                    Swal.fire('Error!', 'Error fetching revisions: ' + response.message, 'error');
+                }
+            }, 'json').fail(function() {
+                Swal.fire('Error!', 'Failed to fetch file revisions.', 'error');
+            });
         });
 </script>
 
@@ -1106,8 +1243,17 @@ try {
     $('#addRevisionForm').on('submit', function (e) {
         e.preventDefault();
       
-
         const formData = new FormData(this); // Create a FormData object for file upload
+
+        // Show loading state with SweetAlert
+        Swal.fire({
+            title: 'Adding Revision...',
+            text: 'Please wait while we upload the new revision.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
 
         // Disable the button to prevent double-click submissions
         $('#addRevisionBtn').prop('disabled', true);
@@ -1124,14 +1270,23 @@ try {
                 if (response.status === 'success') {
                     // Close the Add Revision Modal
                     $('#addFileRevisionModal').modal('hide');
-                    // Reload the page to reflect changes
-                    location.reload();
+                    
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Revision added successfully!',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Reload the page to reflect changes
+                        location.reload();
+                    });
                 } else {
-                    alert(response.message || 'Error adding the revision. Please try again.');
+                    Swal.fire('Error!', response.message || 'Error adding the revision. Please try again.', 'error');
                 }
             },
             error: function () {
-                alert('An error occurred while adding the revision.');
+                Swal.fire('Error!', 'An error occurred while adding the revision.', 'error');
             },
             complete: function () {
                 // Re-enable the button once the AJAX request is complete
@@ -1226,6 +1381,17 @@ $(document).on('click', '.edit-filename', function () {
 $('#editFilenameForm').on('submit', function (e) {
     e.preventDefault();
     const formData = new FormData(this);
+    
+    // Show loading state
+    Swal.fire({
+        title: 'Updating...',
+        text: 'Please wait while we update the filename.',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
     $.ajax({
         url: '../functions/file_functions/edit_filename.php',
         method: 'POST',
@@ -1234,7 +1400,13 @@ $('#editFilenameForm').on('submit', function (e) {
         contentType: false,
         success: function (response) {
             if (response.status === 'success') {
-                Swal.fire('Success!', response.message, 'success').then(() => {
+                Swal.fire({
+                    title: 'Success!',
+                    text: response.message,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
                     $('#editFilenameModal').modal('hide');
                     location.reload();
                 });
@@ -1329,6 +1501,27 @@ $(document).on('click', '.download-file', function () {
     #filesTable .btn-group .btn {
         flex: 0 0 auto;
     }
+    
+    /* Improve DataTables controls on mobile */
+    .dataTables_length, .dataTables_filter {
+        margin-bottom: 10px;
+    }
+    
+    .dataTables_length select, .dataTables_filter input {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    /* Better pagination on mobile */
+    .dataTables_paginate {
+        text-align: center;
+        margin-top: 10px;
+    }
+    
+    .dataTables_paginate .paginate_button {
+        padding: 0.375rem 0.75rem;
+        margin: 0 2px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1348,6 +1541,26 @@ $(document).on('click', '.download-file', function () {
     /* Hide less important columns on very small screens */
     #filesTable .dtr-hidden {
         display: none !important;
+    }
+    
+    /* Stack DataTables controls vertically on very small screens */
+    .dataTables_wrapper .row:first-child {
+        flex-direction: column;
+    }
+    
+    .dataTables_wrapper .row:first-child > div {
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    /* Improve responsive modal */
+    .dtr-modal {
+        padding: 10px;
+    }
+    
+    .dtr-modal .dtr-modal-content {
+        max-width: 100vw;
+        margin: 10px;
     }
 }
 
@@ -1390,6 +1603,96 @@ $(document).on('click', '.download-file', function () {
 .dataTables_wrapper {
     width: 100%;
     overflow-x: auto;
+}
+
+/* Improve responsive control display */
+.dtr-control {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.dtr-control:hover {
+    background-color: #0056b3;
+}
+
+/* Better responsive details layout */
+.dtr-details {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.dtr-details dt {
+    font-weight: bold;
+    color: #495057;
+}
+
+.dtr-details dd {
+    margin: 0;
+    word-break: break-word;
+}
+
+/* Improve action buttons in responsive view */
+.dtr-details .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: flex-start;
+}
+
+.dtr-details .btn-group .btn {
+    flex: 0 0 auto;
+    min-width: 32px;
+}
+
+/* Ensure action buttons are always visible in responsive view */
+.dtr-details .btn-group {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-start;
+    margin-top: 0.5rem;
+}
+
+.dtr-details .btn-group .btn {
+    flex: 0 0 auto;
+    min-width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+/* Mobile-specific action button improvements */
+@media (max-width: 768px) {
+    .dtr-details .btn-group {
+        justify-content: center;
+        gap: 6px;
+    }
+    
+    .dtr-details .btn-group .btn {
+        min-width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    /* Ensure action column is always visible */
+    #filesTable td:last-child,
+    #filesTable th:last-child {
+        display: table-cell !important;
+    }
 }
 
 /* Custom scrollbar for better mobile experience */

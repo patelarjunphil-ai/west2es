@@ -246,7 +246,7 @@ $uploadBasePath = '../../uploads/files/';
 
 ---
 
-**Last Updated**: August 12, 2025  
+**Last Updated: October 25, 2025
 **Related Files**: 
 - `functions/file_functions/add_file.php`
 - `functions/file_operations.php`
