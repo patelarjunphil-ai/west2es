@@ -467,7 +467,7 @@
         this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
 
         // Send AJAX request
-        fetch('<?= base_url('functions/forget_password.php') ?>', {
+        fetch('<?= base_url('user/forgot_password') ?>', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -551,7 +551,7 @@
   </script>
 
 
-<!-- <script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
     const registrationForm = document.getElementById('registrationForm');
 
@@ -607,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
-</script> -->
+</script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -634,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Send the form data via AJAX
-            fetch('<?= base_url('functions/register_process.php') ?>', {
+            fetch('<?= base_url('user/register') ?>', {
                 method: 'POST',
                 body: formData
             })

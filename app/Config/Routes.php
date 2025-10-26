@@ -32,6 +32,10 @@ $routes->set404Override();
 $routes->get('/', 'Home::index');
 $routes->post('user/login', 'User::login');
 $routes->post('user/register', 'User::register');
+$routes->post('user/forgot_password', 'User::forgot_password');
+$routes->get('dashboard', 'Dashboard::index');
+$routes->get('logout', 'User::logout');
+
 
 /*
  * --------------------------------------------------------------------

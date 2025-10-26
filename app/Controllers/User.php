@@ -70,4 +70,16 @@ class User extends BaseController
     {
         // Your profile logic goes here
     }
+
+    public function logout()
+    {
+        session()->destroy();
+        return redirect()->to('/');
+    }
+
+    public function forgot_password()
+    {
+        // Your forgot password logic goes here
+        return $this->response->setJSON(['status' => 'success', 'message' => 'Password reset link sent!']);
+    }
 }
