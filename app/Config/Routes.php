@@ -35,6 +35,11 @@ $routes->post('user/register', 'User::register');
 $routes->post('user/forgot_password', 'User::forgot_password');
 $routes->get('dashboard', 'Dashboard::index');
 $routes->get('logout', 'User::logout');
+$routes->get('files/(:segment)', 'File::index/$1');
+$routes->post('files/upload', 'File::upload');
+$routes->get('files/download/(:num)', 'File::download/$1');
+$routes->post('files/edit/(:num)', 'File::edit/$1');
+$routes->post('files/delete/(:num)', 'File::delete/$1');
 
 
 /*

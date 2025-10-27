@@ -705,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             title: 'Login Successful!',
                             text: data.message
                         }).then(() => {
-                            window.location.href = '<?= base_url('pages/dashboard-overview.php') ?>'; // Redirect to admin dashboard
+                            window.location.href = '<?= base_url('dashboard') ?>'; // Redirect to admin dashboard
                         });
                     } else {
                         // Show error SweetAlert
@@ -760,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             title: 'Login Successful!',
                             text: data.message
                         }).then(() => {
-                            window.location.href = '<?= base_url('pages/dashboard-overview.php') ?>'; // Redirect to faculty dashboard
+                            window.location.href = '<?= base_url('dashboard') ?>'; // Redirect to faculty dashboard
                         });
                     } else {
                         // Show error SweetAlert
